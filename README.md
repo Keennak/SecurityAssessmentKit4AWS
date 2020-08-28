@@ -24,8 +24,8 @@ Specify the Collector result directory in the argument.
 ./create_report.sh ./result/SAK_YYYYMMDD-HHMMSS
 ```
 ## System eequirements
-bash, aws-cli, Python3
-  I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
+bash, aws-cli, Python3  
+I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
 
 
 # Security Assessment Kit for AWS
@@ -37,7 +37,7 @@ bash, aws-cli, Python3
 - 使用方法
   ./collect.sh <region name>
 
-　　スクリプトを実行すると、カレントディレクトリ配下に結果ファイルが出力されます。
+　　スクリプトを実行すると、カレントディレクトリ配下に結果ファイルが出力されます。  
 　./result/SAK_YYYYMMDD-HHMMSS
 
 2. Report Creater
@@ -48,9 +48,9 @@ bash, aws-cli, Python3
  引数に、Collectorの結果ディレクトリを指定して実行します。
  ./create_report.sh ./result/SAK_YYYYMMDD-HHMMSS
 
- スクリプトを実行すると、カレントディレクトリ配下にレポートファイルが出力されます。
+ スクリプトを実行すると、カレントディレクトリ配下にレポートファイルが出力されます。  
  ./report/SAK_YYYYMMDD-HHMMSS
 
  3. 動作環境
- mac(Mojave)のbash, aws-cli/2.0.23, Python/3.7.4で動作確認をしました。
+ mac(Mojave)のbash, aws-cli/2.0.23, Python/3.7.4で動作確認をしました。  
   
