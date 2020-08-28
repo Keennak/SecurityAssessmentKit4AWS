@@ -1,5 +1,6 @@
 # Security Assessment Kit for AWS
-1. Collector
+
+# 1. Collector
 ## Overview
 This script collects your aws account setting information and saves it in a JSON-formatted local file.
 This script uses the privileges of the execution role assigned to the execution node to access AWS. ReadOnlyAccess equivalent permissions is required.
@@ -11,7 +12,7 @@ This script uses the privileges of the execution role assigned to the execution 
  * Some services ignore the region specified by the argument and collect configuration information for all regions.
  * Result files will be output under the current directory.
 
-2. Report Creater
+# 2. Report Creater
 ## Overview
 * The report generation script aggregates the JSON files collected by Collector into Markdown format for your assessment. 
 * We recommend to use Prowler and this tool together. Items evaluated by Prowler are not evaluated by this script.
