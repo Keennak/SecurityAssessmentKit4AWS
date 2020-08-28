@@ -7,8 +7,9 @@ This script uses the privileges of the execution role assigned to the execution 
 
 
 ## Usage
- ./collect.sh <region>
-
+```
+ ./collect.sh * region *
+```
  * Some services ignore the region specified by the argument and collect configuration information for all regions.
  * Result files will be output under the current directory.
 
@@ -19,9 +20,9 @@ This script uses the privileges of the execution role assigned to the execution 
 
 ## Usage
 Specify the Collector result directory in the argument.
-
+```
 ./create_report.sh ./result/SAK_YYYYMMDD-HHMMSS
-
+```
 ## System eequirements
 bash, aws-cli, Python3
 I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
