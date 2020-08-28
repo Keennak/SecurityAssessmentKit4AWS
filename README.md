@@ -1,6 +1,32 @@
 # Security Assessment Kit for AWS
+1. Collector
+## Overview
+This script collects your aws account setting information and saves it in a JSON-formatted local file.
+This script uses the privileges of the execution role assigned to the execution node to access AWS. ReadOnlyAccess equivalent permissions is required.
+
 
 ## Usage
+ ./collect.sh <region>
+
+ * Some services ignore the region specified by the argument and collect configuration information for all regions.
+ * Result files will be output under the current directory.
+
+2. Report Creater
+## Overview
+* The report generation script aggregates the JSON files collected by Collector into Markdown format for your assessment. 
+* We recommend to use Prowler and this tool together. Items evaluated by Prowler are not evaluated by this script.
+
+## Usage
+Specify the Collector result directory in the argument.
+
+./create_report.sh ./result/SAK_YYYYMMDD-HHMMSS
+
+## System eequirements
+bash, aws-cli, Python3
+I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
+
+
+# Security Assessment Kit for AWS
 
 1. Collector
 - コレクタースクリプトは、AWS CLIを使用して、アカウントの設定情報を収集、JSON形式のローカルファイルへ保存します。
@@ -24,5 +50,5 @@
  ./report/SAK_YYYYMMDD-HHMMSS
 
  3. 動作環境
-  mac(Mojave)のbash, aws-cli/2.0.23, Python/3.7.4で動作確認をしました。
+ mac(Mojave)のbash, aws-cli/2.0.23, Python/3.7.4で動作確認をしました。
   
