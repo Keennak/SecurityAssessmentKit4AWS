@@ -11,7 +11,8 @@ This script uses the privileges of the execution role assigned to the execution 
  ./collect.sh *region*
 ```
  * Some services ignore the region specified by the argument and collect configuration information for all regions.
- * Result files will be output under the current directory.
+ * Result files will be output under the current directory.  
+ ./result/SAK_YYYYMMDD-HHMMSS
 
 # 2. Report Creater
 ## Overview
@@ -25,7 +26,7 @@ Specify the Collector result directory in the argument.
 ```
 ## System eequirements
 bash, aws-cli, Python3  
-I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
+I checked in bash(mac/Mojave), aws-cli/2.0.23, Python/3.7.4)
 
 
 # Security Assessment Kit for AWS
@@ -34,7 +35,7 @@ I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
 - コレクタースクリプトは、AWS CLIを使用して、アカウントの設定情報を収集、JSON形式のローカルファイルへ保存します。
 - 本スクリプトの実行ノードに割り当てられたロールの権限を使用して、AWSへアクセスします。ReadOnlyAccess相当の権限が必要です。
 - 一部のサービスでは引数で指定されたregionを無視してすべてのregionの設定情報を収集します。
-- 使用方法
+- 使用方法  
   ./collect.sh <region name>
 
 　　スクリプトを実行すると、カレントディレクトリ配下に結果ファイルが出力されます。  
