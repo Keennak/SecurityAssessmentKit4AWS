@@ -25,7 +25,7 @@ Specify the Collector result directory in the argument.
 ```
 ## System eequirements
 bash, aws-cli, Python3
-I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
+  I checked in bash(mac/Mojave), aws-cli/2.0.23, Pytho/3.7.4)
 
 
 # Security Assessment Kit for AWS
