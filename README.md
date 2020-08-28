@@ -8,7 +8,7 @@ This script uses the privileges of the execution role assigned to the execution 
 
 ## Usage
 ```
- ./collect.sh * region *
+ ./collect.sh *region*
 ```
  * Some services ignore the region specified by the argument and collect configuration information for all regions.
  * Result files will be output under the current directory.
