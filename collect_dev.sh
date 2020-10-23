@@ -52,7 +52,9 @@ mkdir -p ${RESULT_DIR}
 
 # Run collector for each service
 
-. ${COMMAND_DIR}/collect_rds.sh 2>&1 | tee ${RESULT_DIR}/RDS.log          # AGW
+#. ${COMMAND_DIR}/collect_ecr.sh 2>&1 | tee ${RESULT_DIR}/ECR.log          # ECR
+. ${COMMAND_DIR}/collect_cw.sh 2>&1 | tee ${RESULT_DIR}/CW.log          # CloudWatch
+
 
 
 # Archive the result files and delete the temporary files
