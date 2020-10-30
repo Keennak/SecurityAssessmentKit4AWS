@@ -6,26 +6,39 @@
 # usage
 usage() {
     echo "USAGE"
-    echo "    ./SAK_collect.sh <region name> <profile name>"
+    echo "    ./SAK_collect.sh <region name>  [<profile name>]"
     echo "    example:"
-    echo "       ./create_report.sh us-west-2 default"
+    echo "       ./create_report.sh us-west-2 myProfile"
     echo ""
 }
 
 # check input
-if [ $# != 2 ]; then
-  usage
-  exit 1
-else
-  aws sts get-caller-identity --region ${1} --profile ${2} > /dev/null 2>&1
-  if [ $? != 0 ]; then
+case $# in
+  1 ) 
+    aws sts get-caller-identity --region ${1} > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      usage
+      exit 1
+    fi
+    TARGET_REGION=${1}
+    TARGET_PROFILE=""
+  ;;
+  2 )
+    aws sts get-caller-identity --region ${1} --profile ${2} > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      usage
+      exit 1
+    fi
+    TARGET_REGION=${1}
+    TARGET_PROFILE=${2}
+  ;;
+  * ) 
     usage
     exit 1
-  fi
-fi
+  ;;
+esac
 
-TARGET_REGION=${1}
-TARGET_PROFILE=${2}
+echo TARGET_PROFILE: ${TARGET_PROFILE}
 
 # caws command
 # usage:
@@ -41,12 +54,20 @@ caws() {
 }
 
 change_role(){
-  role_arn="$(aws configure get role_arn --profile ${TARGET_PROFILE})"
-  tokens=$(aws sts assume-role --role-arn ${role_arn} --role-session-name "AssessmentKit" --query Credentials)
+  if [ -n "${TARGET_PROFILE}" ]; then
+    role_arn="$(aws configure get role_arn --profile ${TARGET_PROFILE})"
+    tokens=$(aws sts assume-role --role-arn ${role_arn} --role-session-name "AssessmentKit" --query Credentials)
 
-  export AWS_ACCESS_KEY_ID=`echo $tokens     |jq -r .AccessKeyId`
-  export AWS_SECRET_ACCESS_KEY=`echo $tokens |jq -r .SecretAccessKey`
-  export AWS_SESSION_TOKEN=`echo $tokens     |jq -r .SessionToken`
+    export AWS_ACCESS_KEY_ID=`echo $tokens     |jq -r .AccessKeyId`
+    export AWS_SECRET_ACCESS_KEY=`echo $tokens |jq -r .SecretAccessKey`
+    export AWS_SESSION_TOKEN=`echo $tokens     |jq -r .SessionToken`
+    
+    echo "Collected by ${role_arn}"
+
+    else
+      echo "Collect by current role"
+
+  fi
 }
 
 # COMMON Environment variable
