@@ -2,13 +2,13 @@
 #
 # HD Security Accessment Collector
 #
-# ECR collector
+# SNS collector
 #
 # -----------------------------------------------------------
 
 
 # The script creates directories and logs with this tag
-SDA_TAG=ECR
+SDA_TAG=SNS
 
 mkdir ${RESULT_DIR}/${SDA_TAG}
 cd ${RESULT_DIR}/${SDA_TAG}
@@ -18,7 +18,6 @@ cd ${RESULT_DIR}/${SDA_TAG}
 #  caws <AWS Service Name> <CLI_COMMAND> "<PARAMETER>"
 # -----------------------------------------------------------
 
-# COMMON
 
 # get caller account id
 # account_id=$(aws sts get-caller-identity --query "Account" --output text)
@@ -34,18 +33,14 @@ cd ${RESULT_DIR}/${SDA_TAG}
 # GROUP_LIST=$(aws iam list-groups --query Groups[*].GroupName --output text)
 
 
-# ECR01
-# collect repository list & information
-#   encryptionConfiguration to check KMS Encription Status
+# SNS01
+# Get Topics
+TOPICS=$(aws sns list-topics --query Topics[].TopicArn --output text --region ${SDA_REGION})
+caws "SNS01" "sns" "list-topics" ""
 
-caws "ECR01_${SDA_REGION}" "ecr" "describe-repositories" ""
-
-# ECR02
-# collect repository policy
-
-REPOSITORIES=$(aws ecr describe-repositories --query repositories[].repositoryName --output text --region ${SDA_REGION})
-for n in ${REPOSITORIES}; do
-    caws "ECR02_${SDA_REGION}_${n}" "ecr" "get-repository-policy" "--repository-name ${n}"
+# SNS02 Get Topic Attributes. Check SSE settings and topic policy
+for TPC in ${TOPICS}; do
+    caws "SNS02_${TPC}" "sns" "get-topic-attributes" "--topic-arn ${TPC} --region ${SDA_REGION}"
 done
 
 cd -
