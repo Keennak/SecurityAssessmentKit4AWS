@@ -123,3 +123,4 @@ for region in ${REGION_LIST}; do
     
 done
 cd -
+
