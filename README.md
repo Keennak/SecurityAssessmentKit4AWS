@@ -43,7 +43,7 @@ I checked in bash(mac/Mojave), aws-cli/2.0.23, Python/3.7.4)
 　　スクリプトを実行すると、カレントディレクトリ配下に結果ファイルが出力されます。  
 　./result/SAK_YYYYMMDD-HHMMSS
 
-2. Report Creater
+2. Report generator
 - レポート生成スクリプトは、Collectorで収集したJSONを、アセスメント用のMD形式に集計します。また、AWSベストプラクティスのうち、単純な評価項目については、評価結果を合わせて出力します。
 - Prowlerをあわせて実施されると包括的なアセスメントが可能です。Prowlerで評価される項目は本スクリプトでは評価されません。
 
