@@ -59,6 +59,13 @@ done
 
 caws "CWL03_${SDA_REGION}" "logs" "describe-destinations" ""
 
+# CWL04
+# Monitor log S3 export API.
+# This item is not checked in this script. Please check on the console.
+# In this section, the script checks the settings of the export task.
+
+caws "CWL04_${SDA_REGION}" "logs" "describe-export-tasks" ""
+
 # CloudWatch Events
 # CWE01
 # collect rules information
