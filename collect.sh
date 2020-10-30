@@ -66,6 +66,7 @@ mkdir -p ${RESULT_DIR}
 change_role
 
 . ${COMMAND_DIR}/collect_agw.sh 2>&1 | tee ${RESULT_DIR}/AGW.log          # API Gateway
+. ${COMMAND_DIR}/collect_cfg.sh 2>&1 | tee ${RESULT_DIR}/CFG.log          # CFG
 . ${COMMAND_DIR}/collect_cw.sh 2>&1 | tee ${RESULT_DIR}/CW.log          # CloudWatch
 # . ${COMMAND_DIR}/collect_cwl.sh 2>&1 | tee ${RESULT_DIR}/CWL.log          # CloudWatch Logs is checked in collect_cw.sh
 . ${COMMAND_DIR}/collect_ddb.sh 2>&1 | tee ${RESULT_DIR}/DDB.log          # Dynamo DB
@@ -80,6 +81,19 @@ change_role
 . ${COMMAND_DIR}/collect_sec.sh 2>&1 | tee ${RESULT_DIR}/SEC.log          # GuardDuty Security Hub
 . ${COMMAND_DIR}/collect_sqs.sh 2>&1 | tee ${RESULT_DIR}/SQS.log          # SQS
 . ${COMMAND_DIR}/collect_trail.sh 2>&1 | tee ${RESULT_DIR}/TRAIL.log      # CloudTrail
+
+
+. ${COMMAND_DIR}/collect_lambda.sh 2>&1 | tee ${RESULT_DIR}/LMD.log       # Lambda
+. ${COMMAND_DIR}/collect_elb.sh 2>&1 | tee ${RESULT_DIR}/ELB.log          # ELB
+. ${COMMAND_DIR}/collect_ssm.sh 2>&1 | tee ${RESULT_DIR}/SSM.log          # SSM
+. ${COMMAND_DIR}/collect_sec.sh 2>&1 | tee ${RESULT_DIR}/SEC.log          # Secretsmanager
+
+. ${COMMAND_DIR}/collect_kinesis.sh 2>&1 | tee ${RESULT_DIR}/KNS.log      # Kinesis
+. ${COMMAND_DIR}/collect_athena.sh 2>&1 | tee ${RESULT_DIR}/ATN.log       # Athena
+. ${COMMAND_DIR}/collect_codedeploy.sh 2>&1 | tee ${RESULT_DIR}/DPL.log   # CodeDeploy
+. ${COMMAND_DIR}/collect_codepipeline.sh 2>&1 | tee ${RESULT_DIR}/CDP.log   # CodePipeline
+. ${COMMAND_DIR}/collect_route53.sh 2>&1 | tee ${RESULT_DIR}/R53.log      # Route53
+. ${COMMAND_DIR}/collect_sns.sh 2>&1 | tee ${RESULT_DIR}/SNS.log          # SNS
 
 # Archive the result files and delete the temporary files
 
