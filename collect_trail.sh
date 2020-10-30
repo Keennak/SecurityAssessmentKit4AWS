@@ -51,15 +51,6 @@ for i in $(seq 0 $((${TRAIL_LEN} - 1))); do
     region=$(echo ${TRAIL_LIST_JSON} | jq -r .[$i].REGION)
     bucket=$(aws cloudtrail get-trail --name ${name} --region ${region} --query Trail.S3BucketName --output text)
 
-    # TRAIL04
-    # Separate log strage(s3) accounts
-    # In this section, you can collect your all trail's S3 bucket settings
-    caws "TRAIL04_${name}_${bucket}" "s3api" "get-bucket-acl" "--bucket ${bucket}"
-
-    # TRAIL05
-    # Protect Trail S3 buckets with a bucket policy.
-    caws "TRAIL05_${name}_${bucket}" "s3api" "get-bucket-policy" "--bucket ${bucket}"
-
     # TRAIL06
     # Trail buckets can be identified separately from normal buckets and their access status audited. Tagging buckets makes it easier.
     # Because there are multiple monitoring implementation patterns, it is difficult to determine if monitoring is running, you will respond by hearing.
@@ -67,16 +58,29 @@ for i in $(seq 0 $((${TRAIL_LEN} - 1))); do
     # which is the premise of monitoring, and the presence of tags that facilitate monitoring.
     SDA_REGION=${region}
     caws "TRAIL06_${name}" "cloudtrail" "get-event-selectors" "--trail-name ${name}"
-    caws "TRAIL06_${name}_${bucket}" "s3api" "get-bucket-logging" "--bucket ${bucket}"
-    caws "TRAIL06_${name}_${bucket}" "s3api" "get-bucket-tagging" "--bucket ${bucket}"
 
-    # TRAIL07
-    # Enable the object lifecycle of Trail S3 bucket.
-    caws "TRAIL07_${name}_${bucket}" "s3api" "get-bucket-lifecycle-configuration" "--bucket ${bucket}"
+    if [ $bucket != "" ]; then
+        # TRAIL04
+        # Separate log strage(s3) accounts
+        # In this section, you can collect your all trail's S3 bucket settings
+        caws "TRAIL04_${name}_${bucket}" "s3api" "get-bucket-acl" "--bucket ${bucket}"
 
-    # TRAIL08
-    # Enable MFA Delete on Trail's S3 bucket.
-    caws "TRAIL08_${name}_${bucket}" "s3api" "get-bucket-versioning" "--bucket ${bucket}"
+        # TRAIL05
+        # Protect Trail S3 buckets with a bucket policy.
+        caws "TRAIL05_${name}_${bucket}" "s3api" "get-bucket-policy" "--bucket ${bucket}"
+
+        # TRAIL06
+        caws "TRAIL06_${name}_${bucket}" "s3api" "get-bucket-logging" "--bucket ${bucket}"
+        caws "TRAIL06_${name}_${bucket}" "s3api" "get-bucket-tagging" "--bucket ${bucket}"
+
+        # TRAIL07
+        # Enable the object lifecycle of Trail S3 bucket.
+        caws "TRAIL07_${name}_${bucket}" "s3api" "get-bucket-lifecycle-configuration" "--bucket ${bucket}"
+
+        # TRAIL08
+        # Enable MFA Delete on Trail's S3 bucket.
+        caws "TRAIL08_${name}_${bucket}" "s3api" "get-bucket-versioning" "--bucket ${bucket}"
+    fi
 
 done
 
