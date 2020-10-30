@@ -38,7 +38,7 @@ I checked in bash(mac/Mojave), aws-cli/2.0.23, Python/3.7.4)
 - 一部のサービスでは引数で指定されたregionを無視してすべてのregionの設定情報を収集します。
 
 - 使用方法  
-  ./collect.sh <region name> [<profile_name>]
+  ./collect.sh region_name [profile_name]
 
 　　スクリプトを実行すると、カレントディレクトリ配下に結果ファイルが出力されます。  
 　./result/SAK_YYYYMMDD-HHMMSS
