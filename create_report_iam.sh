@@ -19,6 +19,15 @@ create_md_header() {
     echo -e "| :------- | :---------- | :------ | :----- | :--- |" 
 }
 
+create_md_header2() {
+    echo -e ""
+    echo -e "## ${ID}"
+    echo -e "${DESCRIPTION}"
+    echo -e ""
+    echo -e "| 対象 | 確認結果 | 内容 |" 
+    echo -e "| :------ | :----- | :--- |" 
+}
+
 checker_out() {
     # output result file
     OUT=$(echo ${OUTPUT})
@@ -34,6 +43,35 @@ checker_out() {
 
 }
 
+checker_out2() {
+    # output result file
+    OUT=$(echo ${OUTPUT})
+
+    echo -e "| ${CHECK_METHOD} | ${RESULT} | ${OUT} |"
+
+
+
+    # echo -e "${ID}\t${DESCRIPTION}\t${CHECK_METHOD}\t${RESULT}\t${OUTPUT}"
+    ID=""
+    DESCRIPTION=""
+    CHECK_METHOD=""
+    RESULT=""
+    OUTPUT=""
+
+}
+
+#
+# IAM02
+#
+ID=IAM02
+echo "##IAM02"
+echo "個々の IAM ユーザーの作成"
+echo "複数の作業者でIAMユーザを共用ししていないことを確認する"
+
+for file in $(ls -1 ${INPUT_DIR}/${ID}*); do
+    cat "${file}" | jq '.Users | sort_by(.PasswordLastUsed)' | jq -c '.[] | [.UserName , .PasswordLastUsed]'
+done
+
 # main
 # ファイルシステムのデータを扱うので、シェルで書く
 create_md_header
@@ -42,20 +80,11 @@ users=$(cat ${INPUT_DIR}/IAM02_list-users_*.json | jq -r .Users[].UserName)
 roles=$(cat ${INPUT_DIR}/IAM04_list-roles_*.json | jq -r .Roles[].RoleName)
 groups=$(cat ${INPUT_DIR}/IAM04_list-groups_*.json | jq -r .Groups[].GroupName)
 
-# IAM01
 
 #
 # section
 #
-ID=IAM02
-DESCRIPTION="個々の IAM ユーザーの作成"
-CHECK_METHOD="複数の作業者でIAMユーザを共用ししていないことを確認する"
 
-for file in $(ls -1 ${INPUT_DIR}/${ID}*); do
-    RESULT="右記のユーザリスト（UserName、PasswordLastUsed）の利用状況を確認する"
-    OUTPUT=$(cat "${file}" | jq -c '.[][] | [.UserName , .PasswordLastUsed]')
-    checker_out
-done
 
 #
 # section
@@ -225,6 +254,8 @@ ID=IAM08
 DESCRIPTION="アカウントのすべてのユーザーに対して多要素認証 (MFA) を要求する<br>該当ユーザのMFAデバイスARNを取得、確認する"
 json_directory="${INPUT_DIR}/${ID}_"
 
+create_md_header2
+
 # check MFA Usage for the user
 for user in ${users}; do
     CHECK_METHOD="${user}"
@@ -235,7 +266,7 @@ for user in ${users}; do
     else
         RESULT="PASS"
     fi
-    checker_out
+    checker_out2
 done
 
 # IAM09
@@ -246,6 +277,8 @@ ID=IAM10
 DESCRIPTION="IAM ユーザーの不要な認証情報 (つまり、パスワードとアクセスキー) は削除する<br>該当ユーザにログインプロファイルが存在する場合はパスワードログインが可能<br>アクセスキーについては、Prowler[check121]にて確認する"
 json_directory="${INPUT_DIR}/${ID}_"
 
+create_md_header2
+
 for user in ${users}; do
     CHECK_METHOD="${user}"
     OUTPUT=$(cat ${json_directory}${user}_get-login-profile*)
@@ -253,7 +286,7 @@ for user in ${users}; do
         OUTPUT="no login profile"
     fi
     RESULT="Check required" # Prowlerの結果と、本結果を突き合わせて確認する。
-    checker_out
+    checker_out2
 done
 
 # IAM11
@@ -262,18 +295,25 @@ done
 
 # IAM12
 # インスタンスにロールを割り当てる場合、その権限が過剰でないか確認する。
+
+
 ID=IAM12
 DESCRIPTION="サービスロール/インスタンスロールに最小権限を付与する"
+
+create_md_header2
+
 CHECK_METHOD="インスタンスにロールを割り当てる場合、その権限が過剰でないか確認する。"
 RESULT="-"
 OUTPUT="IAM13の結果にて、ec2サービスを信頼しているポリシーに関しては、IAM04の結果にてポリシーの割当状況を改めて確認する"
-checker_out
+checker_out2
 
 # IAM13
 # ロールの信頼関係が適切かどうか確認する
 ID=IAM13
 DESCRIPTION="ロールに最小の信頼関係を付与する<br>ロールの信頼されたエンティティには、必要最小限のAWSサービスかアカウントしか入っていないことを確認する。"
 json_directory="${INPUT_DIR}/${ID}_"
+
+create_md_header2
 
 for role in ${roles}; do
     CHECK_METHOD="${role}"
@@ -282,7 +322,7 @@ for role in ${roles}; do
         OUTPUT="no AssumeRolePolicyDocument"
     fi
     RESULT="Check required" # 目視で確認する
-    checker_out
+    checker_out2
 done
 
 # IAM14
@@ -290,6 +330,8 @@ done
 ID=IAM14
 DESCRIPTION="利用していない不要なロールがないことを確認する<br>ロールの利用状況を確認の上、長期間利用のないものは削除を検討する。（過去一度も使用していないものはFIAL）"
 json_directory="${INPUT_DIR}/${ID}_"
+
+create_md_header2
 
 for role in ${roles}; do
     CHECK_METHOD="${role}"
@@ -301,7 +343,7 @@ for role in ${roles}; do
         RESULT="Check required" # 目視で確認する
     fi
 
-    checker_out
+    checker_out2
 done
 
 # END

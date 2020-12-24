@@ -53,19 +53,33 @@ caws() {
   aws ${SDA_SERVICE} ${SDA_COMMAND} --region ${SDA_REGION} ${SDA_PARAM} >>${SDA_ID}_${SDA_COMMAND}_${SDA_REGION}.json
 }
 
-change_role(){
+set_profile(){
   if [ -n "${TARGET_PROFILE}" ]; then
-    role_arn="$(aws configure get role_arn --profile ${TARGET_PROFILE})"
-    tokens=$(aws sts assume-role --role-arn ${role_arn} --role-session-name "AssessmentKit" --query Credentials)
+    # check profile is user or role
+    type=$(aws sts get-caller-identity --query Arn --output text --profile ${TARGET_PROFILE} |cut -d ":" -f 6| cut -d "/" -f 1)
+    case ${type} in
+      'assumed-role' )
+        role_arn="$(aws configure get role_arn --profile ${TARGET_PROFILE})"
+        tokens=$(aws sts assume-role --role-arn ${role_arn} --role-session-name "AssessmentKit" --query Credentials)
+      ;;
+      'user' )
+        tokens=$(aws sts get-session-token --profile ${TARGET_PROFILE} --query Credentials)
+        id=
+      ;;
+      * )
+        echo ${id} 
+        exit 1
+      ;;
+    esac
 
     export AWS_ACCESS_KEY_ID=`echo $tokens     |jq -r .AccessKeyId`
     export AWS_SECRET_ACCESS_KEY=`echo $tokens |jq -r .SecretAccessKey`
     export AWS_SESSION_TOKEN=`echo $tokens     |jq -r .SessionToken`
     
-    echo "Collected by ${role_arn}"
+    echo "Collected by $(aws sts get-caller-identity --query Arn --output text)"
 
     else
-      echo "Collect by current role"
+      echo "Collect by current credentials"
 
   fi
 }
@@ -84,7 +98,7 @@ mkdir -p ${RESULT_DIR}
 # Run collector for each service
 
 # use role in profile
-change_role
+set_profile
 
 #. ${COMMAND_DIR}/collect_agw.sh 2>&1 | tee ${RESULT_DIR}/AGW.log          # API Gateway
 #. ${COMMAND_DIR}/collect_athena.sh 2>&1 | tee ${RESULT_DIR}/ATN.log       # Athena
@@ -110,7 +124,8 @@ change_role
 #. ${COMMAND_DIR}/collect_sns.sh 2>&1 | tee ${RESULT_DIR}/SNS.log          # SNS
 #. ${COMMAND_DIR}/collect_sqs.sh 2>&1 | tee ${RESULT_DIR}/SQS.log          # SQS
 #. ${COMMAND_DIR}/collect_ssm.sh 2>&1 | tee ${RESULT_DIR}/SSM.log          # SSM
-. ${COMMAND_DIR}/collect_trail.sh 2>&1 | tee ${RESULT_DIR}/TRAIL.log      # CloudTrail
+#. ${COMMAND_DIR}/collect_trail.sh 2>&1 | tee ${RESULT_DIR}/TRAIL.log      # CloudTrail
+. ${COMMAND_DIR}/collect_cost.sh 2>&1 | tee ${RESULT_DIR}/COST.log      # Cost from TrustedAdvisor
 
 # Archive the result files and delete the temporary files
 

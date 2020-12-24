@@ -15,6 +15,21 @@ dir2 = args[1] + '/EKS'
 p2 = Path(dir2)
 
 
+# ---------------------------------------------------------
+# get_value_from_key_value_dict
+# extract value from specified Key.
+# usage get_value_from_key_value_dict(dictionary, key)
+#
+# example
+#    get_value_from_key_value_dict(d, Name) -> MainDISK
+#      from dictionary below
+#      { Key : Name, Value: MainDISK },{ Key : SIZE, Value : 1GB }
+def get_value_from_key_value_dict(d, val):
+    for t in d:
+        if ([v for k, v in t.items() if v == val]):
+            return(t.get('Value'))
+# ---------------------------------------------------------
+
 # get reion list from file name (not aws)
 def get_regions():
     file_names = os.listdir(p)
@@ -57,12 +72,69 @@ def get_loadbalancer_ids(region):
     return lb_ids
 
 
+def get_images():
+    # -------
+    # AMIの情報DICTを作成する
+    # ami_dict = { <ImageId> : [ <Name>, <CreationDate> ], <ImageId> : [],,,}
+    
+    d = {}
+    for f in list(p.glob('*_describe-images_*.json')):
+        with open(f) as j:
+            d = json.load(j)
+            for k in d['Images']:
+                ami_dict[k.get('ImageId')] = []
+                ami_dict[k.get('ImageId')].append(k.get('Name'))
+                ami_dict[k.get('ImageId')].append(k.get('CreationDate'))
+
+def get_interfaces():
+    # -------
+    # AMIの情報DICTを作成する
+    # ami_dict = { <ImageId> : [ <Name>, <CreationDate> ], <ImageId> : [],,,}
+    
+    d = {}
+    for f in list(p.glob('*_describe-network-interfaces_*.json')):
+        with open(f) as j:
+            d = json.load(j)
+            for k in d['NetworkInterfaces']:
+                try:
+                    nw_interfaces[k.get('NetworkInterfaceId')]
+                except KeyError:
+                    nw_interfaces[k.get('NetworkInterfaceId')] = []         
+                # nw_interfaces[k.get('NetworkInterfaceId')].append(k.get('PrivateIpAddresses'))
+                nw_interfaces[k.get('NetworkInterfaceId')].append(k.get('SubnetId'))
+                nw_interfaces[k.get('NetworkInterfaceId')].append(k.get('Groups'))
+
+
+
+def print_security_group():
+    print('### Appendix Security Group')
+    for f in list(p.glob('*_describe-security-groups_*json')):
+        with open(f) as j:
+            d = json.load(j)
+            for vpc_dict in d.get('SecurityGroups'):
+                print('-----------------------------')
+                print('GroupName : ' + vpc_dict.get('GroupName'))
+                print('GroupId   : ' + vpc_dict.get('GroupId'))
+                print('')
+                print('Ingress')
+                print('```json')
+                for ingress in vpc_dict.get('IpPermissions'):
+                    print(ingress)
+                print('```')
+                print('Egress')
+                print('```json')
+                for egress in vpc_dict.get('IpPermissionsEgress'):
+                    print(egress)
+                print('```')
+
+
 def ec2_01():
     print('# EC2')
     print('### 1. Security Group で最小限の inbound/outbound に絞る')
     print('#### ここでは 0.0.0.0/0 のSecurity Group をリストする')
-    print('| Region | GroupName | GID | Description | Name | Ingress | Egress | attached resources | Comment |')
-    print('| :----- | :-------- | :-- | :---------- | :--- | :------ | :----- | :----------------- | :------ |')
+    print('|   N    | Region | GroupName | GID | Description | Name | Ingress | Egress | attached resources | Comment |')
+    print('| :----- | :----- | :-------- | :-- | :---------- | :--- | :------ | :----- | :----------------- | :------ |')
+    n=1
     for region in regions:
         # -------
         # セキュリティグループを使用している、インスタンス、クラスター、ELBのリストを作成する
@@ -87,7 +159,6 @@ def ec2_01():
 
         # ELBについては、collectorでデータが取得されていないので、未コード化。
         # -------
-
         for sg in security_groups[region].get('SecurityGroups'):
             group_name = sg.get('GroupName')
             description = sg.get('Description')
@@ -110,15 +181,17 @@ def ec2_01():
                     if ip_range.get('CidrIp') == '0.0.0.0/0':
                         egress = 'FAIL'
             use_list = str(sg_use_dict.get(gid))
-            print('| %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
-                region, group_name, gid, description, name, ingress, egress, use_list, ''))
+            print('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
+                n, region, group_name, gid, description, name, ingress, egress, use_list, ''))
+            n+=1
     print('')
 
 
 def ec2_02():
     print('### 2. すべてのVolume を暗号化する')
-    print('| Region | Volume ID | Instance ID | Instance Name | Device | Encrypted | Check Result | Comment |')
-    print('|:-------|:----------|:------------|:--------------|:-------|:----------|:-------------|:--------|')
+    print('| N | Region | Volume ID | Instance ID | Instance Name | Device | Encrypted | Check Result | Comment |')
+    print('|:--|:-------|:----------|:------------|:--------------|:-------|:----------|:-------------|:--------|')
+    n=1
     for region in regions:
         # create instance dictionaly
         # { <instanceId> : { name: <instance_name> }, <instanceId2> : { name : <instance_name2> }, ,,, }
@@ -151,20 +224,24 @@ def ec2_02():
             else:
                 check_result = 'FAIL'
             comment = ''
-            print('| %s | %s | %s | %s | %s | %s | %s | %s |' % (region, volume_id,
+            print('| %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (n, region, volume_id,
                                                                  instance_id, instance_name, device, is_encrypted, check_result, comment))
+
+            n+=1
     print('')
     print('')
 
 
 def ec2_03():
     print('### 3. すべての Snapshot を暗号化する')
-    print('| Region | Snapshot ID | Volume ID | Start Time | Encrypted | Check Result | Description | Comment |')
-    print('|:---|:---|:---|:---|:---|:---|:---|:---|')
+    print('| N  | Region | Snapshot ID | Volume ID | Start Time | Encrypted | Check Result | Description | Comment |')
+    print('|:---|:---|:---|:---|:---|:---|:---|:---|:---|')
+    n=1
     for region in regions:
         # print(json.dumps(ebs_snapshots[region],indent=2))
         sorted_objects = sorted(ebs_snapshots[region]['Snapshots'], key=lambda x: (
             x['VolumeId'], x['StartTime']))
+        
         for obj in sorted_objects:
             # print(obj)
             snapshot_id = obj['SnapshotId']
@@ -177,16 +254,18 @@ def ec2_03():
                 check_result = 'FAIL'
             comment = ''
             descript = obj['Description']
-            print('| %s | %s | %s | %s | %s | %s | %s | %s |' % (region, snapshot_id,
+            print('| %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (n, region, snapshot_id,
                                                                  volume_id, start_time, is_encrypted, check_result, descript, comment))
+            n+=1
     print('')
     print('')
 
 
 def ec2_04():
     print('### 4. 自作AMIの Launch Permission は必要最小限にする')
-    print('| Region | AMI ID | NAME   | Pulic | Launch Permission | AMI creation date | Check Result | Comment |')
-    print('| :----- | :----- | :----- | :---- | :---------------- | :---------------- | :----------- | :------ |')
+    print('|  N |Region | AMI ID | NAME   | Pulic | Launch Permission | AMI creation date | Check Result | Comment |')
+    print('| :--|:----- | :----- | :----- | :---- | :---------------- | :---------------- | :----------- | :------ |')
+    n=1
     for region in regions:
         if len(amis[region]):
             # print(json.dumps(amis[region],indent=2))
@@ -208,13 +287,14 @@ def ec2_04():
                 creation_date = str(ami_names[region][ami_id]['CreationDate'])
 
                 comment = ''
-                print('| %s | %s | %s | %s | %s | %s | %s | %s |' % (
-                    region, ami_id, name, public, launch_permissions, creation_date, check_result, comment))
+                print('| %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
+                    n, region, ami_id, name, public, launch_permissions, creation_date, check_result, comment))
                 ami_id = ''
                 name = ''
                 public = ''
                 launch_permissions = ''
                 check_result = ''
+                n+=1
     print('')
     print('')
 
@@ -237,8 +317,9 @@ def ec2_06():
     print('### 6. Linux インスタンスの SSH ログインに必要な Private Key を保護する。なお、当環境はすべてSSMの利用を想定しているため、SSHポートの開放とKeyPairは本来不要')
     print('')
     print('#### 6.1 Port#22 を開放している SecurityGroup の一覧')
-    print('| Region | Security Group ID | Group Name | Description | Comment |')
-    print('|:-------|:------------------|:-----------|:------------|:--------|')
+    print('|  N |Region | Security Group ID | Group Name | Description | Comment |')
+    print('|:---|:-------|:------------------|:-----------|:------------|:--------|')
+    n=1
     for region in regions:
         for sg in security_groups[region]['SecurityGroups']:
             # eprint(sg)
@@ -247,27 +328,31 @@ def ec2_06():
             sg_desc = sg.get('Description')
             for ip_permission in sg['IpPermissions']:
                 if ip_permission.get('ToPort') == 22:
-                    print('| %s | %s | %s | %s | %s |' %
-                          (region, sg_id, sg_name, sg_desc, ''))
+                    print('| %s | %s | %s | %s | %s | %s |' %
+                          (n, region, sg_id, sg_name, sg_desc, ''))
+                    n+=1
 
     print('')
     print('#### 6.2 KeyPairが存在する Instance の一覧')
-    print('| Region | KeyPairId | KeyName | Comment |')
-    print('|:-------|:----------|:--------|:--------|')
+    print('|  N | Region | KeyPairId | KeyName | Comment |')
+    print('|:---|:-------|:----------|:--------|:--------|')
+    n=1
     for region in regions:
         for kp in ec2_key_pairs[region]['KeyPairs']:
             # print(kp)
             kp_id = kp.get('KeyPairId')
             kp_name = kp.get('KeyName')
-            print('| %s | %s | %s | %s |' % (region, kp_id, kp_name, ''))
+            print('| %s | %s | %s | %s | %s |' % (n, region, kp_id, kp_name, ''))
+            n+=1
 
 
 def ec2_07():
     print('### 7 各VPCは VPC Flow Log を取得していて、それが正しいs3バケットに書き込まれている')
     print('')
     print('#### 7.1 VPC FLow Log の一覧')
-    print('| Region | FlowLogId | VpcId | LogDestinationType | LogDestination | Comment |')
-    print('|:-------|:----------|:------|:-------------------|:---------------|:--------|')
+    print('|  N | Region | FlowLogId | VpcId | LogDestinationType | LogDestination | Comment |')
+    print('|:---|:-------|:----------|:------|:-------------------|:---------------|:--------|')
+    n=1
     # print(vpc_flow_logs)
     for region in regions:
         for fl in vpc_flow_logs[region].get('FlowLogs'):
@@ -275,27 +360,31 @@ def ec2_07():
             fl_vpc_id = fl.get('ResourceId')
             fl_ldt = fl.get('LogDestinationType')
             fl_ld = fl.get('LogDestination')
-            print('| %s | %s | %s | %s | %s | %s |' %
-                  (region, fl_id, fl_vpc_id, fl_ldt, fl_ld, ''))
+            print('| %s | %s | %s | %s | %s | %s | %s |' %
+                  (n, region, fl_id, fl_vpc_id, fl_ldt, fl_ld, ''))
+            n+=1
     print('')
 
     print('#### 7.2 VPC Flow Log が設定されていない VPC の一覧')
-    print('| Region | VpcId | Check Result | Comment |')
-    print('|:-------|:------|:-------------|:--------|')
+    print('| N  | Region | VpcId | Check Result | Comment |')
+    print('|:---|:-------|:------|:-------------|:--------|')
+    n=1
     for region in regions:
         vpcs_with_flowlog = set()
         for fl in vpc_flow_logs[region].get('FlowLogs'):
             vpcs_with_flowlog.add(fl.get('ResourceId'))
         vpcs = set(vpc_ids[region])
         for vpc in vpcs - vpcs_with_flowlog:
-            print('| %s | %s | %s | %s |' % (region, vpc, 'FAIL', ''))
+            print('| %s | %s | %s | %s | %s |' % (n, region, vpc, 'FAIL', ''))
+            n+=1
 
 
 def ec2_08():
     print('### 8 可能なかぎり IMDSv2を利用する')
     print('')
-    print('| Region | InstancdId | Name | HttpTokens | Check Result | Comment |')
-    print('|:-------|:-----------|:-----|:-----------|:-------------|:--------|')
+    print('| N | Region | InstancdId | Name | HttpTokens | Check Result | Comment |')
+    print('|:--|:-------|:-----------|:-----|:-----------|:-------------|:--------|')
+    n=1
     # print(ec2_instances)
     for region in regions:
         for rsv in ec2_instances[region]['Reservations']:
@@ -309,16 +398,18 @@ def ec2_08():
                                 name = tag['Value']
                     http_tokens = inst['MetadataOptions']['HttpTokens']
                     result = 'FAIL'
-                    print('| %s | %s | %s | %s | %s | %s |' %
-                          (region, instance_id, name, http_tokens, result, ''))
+                    print('| %s | %s | %s | %s | %s | %s | %s |' %
+                          (n, region, instance_id, name, http_tokens, result, ''))
+                    n+=1
 
 
 def ec2_09():
     print('### 9 EIP, IGW, VGW, NAT-GW は必要な場ににのみ作成し限定的に利用する')
     print('')
     print('#### 9.1 EIP')
-    print('| Region | Name | AssociationId | Eni | PublicIp | Comment |')
-    print('|:-------|:-----|:--------------|:----|:---------|:--------|')
+    print('| N |  Region | Name | AssociationId | Eni | PublicIp | Comment |')
+    print('|:--| :-------|:-----|:--------------|:----|:---------|:--------|')
+    n=1
     for region in regions:
         for addr in elastic_ips[region]['Addresses']:
             name = ''
@@ -329,13 +420,15 @@ def ec2_09():
             asc_id = addr.get('AssociationId')
             eni_id = addr.get('NetworkInterfaceId')
             public_ip = addr.get('PublicIp')
-            print('| %s | %s | %s | %s | %s | %s |' %
-                  (region, name, asc_id, eni_id, public_ip, ''))
+            print('| %s | %s | %s | %s | %s | %s | %s |' %
+                  (n, region, name, asc_id, eni_id, public_ip, ''))
+            n+=1
     print('')
 
     print('#### 9.2 Public IPアドレスを持つ EC2 Instance')
-    print('| Region | InstanceId | Name | PublicIp | Comment |')
-    print('|:-------|:-----------|:-----|:---------|:--------|')
+    print('|  N | Region | InstanceId | Name | PublicIp | Comment |')
+    print('|:---|:-------|:-----------|:-----|:---------|:--------|')
+    n=1
     for region in regions:
         for rsv in ec2_instances[region].get('Reservations'):
             for inst in rsv.get('Instances'):
@@ -347,8 +440,9 @@ def ec2_09():
                         for tag in inst.get('Tags'):
                             if tag.get('Key') == 'Name':
                                 name = tag.get('Value')
-                    print('| %s | %s | %s | %s | %s |' %
-                          (region, inst_id, name, public_ip, ''))
+                    print('| %s | %s | %s | %s | %s | %s |' %
+                          (n, region, inst_id, name, public_ip, ''))
+                    n+=1
     print('')
 
     print('#### 9.3 IGW')
@@ -368,18 +462,18 @@ def ec2_09():
                 vpc_id = ''
             else:
                 vpc_id = igw.get('Attachments')[0]['VpcId']
-            print('| %s | %s | %s | %s | %s |' %
-                  (region, igw_id, name, vpc_id, ''))
+            print('| %s | %s | %s | %s | %s |' % (region, igw_id, name, vpc_id, ''))
     print('')
 
-    print('### 9.4 VGW')
-    print('| Region | VgwId | Comment |')
-    print('|:-------|:------|:--------|')
-    for region in regions:
-        for vgw in vgws[region].get('virtualGateways'):
-            print('| %s | %s | %s |' %
-                  (region, vgw.get('virtualGatewayId'), ''))
-    print('')
+# temp
+    # print('### 9.4 VGW')
+    # print('| Region | VgwId | Comment |')
+    # print('|:-------|:------|:--------|')
+    # for region in regions:
+    #     for vgw in vgws[region].get('virtualGateways'):
+    #         print('| %s | %s | %s |' %
+    #               (region, vgw.get('virtualGatewayId'), ''))
+    # print('')
 
     print('### 9.5 VPN Gateway')
     print('| Region | VpnGwId | VpcId | Name | Comment |')
@@ -414,6 +508,80 @@ def ec2_09():
                   (region, nat_gw_id, vpc_id, public_ip, name, ''))
 
 
+def ec2_10():
+    print('#### 10. VPC endpoint settings')
+    print('| ServiceName | RouteTableIds | SubnetIds | PolicyDocument |')
+    print('|:---------|:---------|:---------|:---------|')
+    vpce_dict = {}
+    for f in list(p.glob('*_describe-vpc-endpoints_*.json')):
+        with open(f) as j:
+            vpce_dict = json.load(j)
+            for k in vpce_dict['VpcEndpoints']:
+                print('| %s | %s | %s | %s |' %
+                    (str(k.get('ServiceName')), str(k.get('RouteTableIds')), str(k.get('SubnetIds')), str(k.get('PolicyDocument'))))
+
+
+def ec2_11():
+    print('#### 11. Instance list')
+
+    # create instance dictionary
+    for f in list(p2.glob('*_describe-instances_*.json')):
+        with open(f) as j:
+            instance_dict = json.load(j)
+            
+
+    # EC2 11
+    print('インスタンスのAMIのバージョンが最新ないし、受容可能なバージョンである')
+    print('')
+    print('')
+
+    # check AMI for the instance
+    # print header
+    print('| N |  Instance Name  | InstanceId | ImageId | IAM role | Cluster Name | ami_info |  nw_info |Check Status | comment |')
+    print('|:--| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |')
+
+    # インスタンスリストを出力する
+    # AMI情報を読み込む
+    get_images()
+    get_interfaces()
+    n=1
+    for k in instance_dict['Reservations']:
+        instance_name_prev = 'none'
+        for i in (k.get('Instances')):
+            instance_id = i.get('InstanceId')
+            image_id = i.get('ImageId')
+            instance_name = get_value_from_key_value_dict(i['Tags'], 'Name')
+            nw_info = ''
+
+            # get eni security groups
+            eni_ids = []
+            for eni in i.get('NetworkInterfaces'):
+                eni_ids.append(eni.get('NetworkInterfaceId'))
+            
+            for eni in eni_ids:
+                nw_info += str(nw_interfaces.get(eni))
+            
+            # get instance information
+            cluster_of_the_instance = get_value_from_key_value_dict(i['Tags'], 'alpha.eksctl.io/cluster-name')
+            if cluster_of_the_instance is None :
+                cluster_of_the_instance = 'None'
+            
+            profile_of_the_instance = i.get('IamInstanceProfile', {}).get('Arn')
+            if profile_of_the_instance is None :
+                profile_of_the_instance = 'None'
+
+            if instance_name != instance_name_prev:
+                # AMI情報を取得する
+                ami_info = str(ami_dict.get(image_id))
+                
+                # 集めた情報を出力する
+                print('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' %
+                    (n, instance_name , instance_id , image_id  , profile_of_the_instance , cluster_of_the_instance , ami_info , nw_info , '', '' ))
+            instance_name_prev = instance_name
+            n+=1
+
+
+
 # get regions collected in the files
 regions = get_regions()
 
@@ -435,6 +603,10 @@ amis = {}
 ami_names = {}
 loadbalancers = {}
 clusters = {}
+ami_dict = {}
+instance_dict = {}
+nw_interfaces = {}
+
 
 # TEMP WORKAROUND FOR DESCRIBE VPCS FAILURE
 vpc_ids = {}
@@ -455,7 +627,7 @@ for region in regions:
         'describe-internet-gateways', region)
     nat_gws[region] = get_resource_object('describe-nat-gateways', region)
     vpn_gws[region] = get_resource_object('describe-vpn-gateways', region)
-    vgws[region] = get_resource_object('describe-virtual-gateways', region)
+####    vgws[region] = get_resource_object('describe-virtual-gateways', region)
 
     # create AMI dictionarys
     amis[region] = {}
@@ -490,3 +662,6 @@ ec2_06()
 ec2_07()
 ec2_08()
 ec2_09()
+ec2_10()
+ec2_11()
+#print_security_group()

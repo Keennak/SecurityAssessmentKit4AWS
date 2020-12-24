@@ -32,6 +32,7 @@ for f in list(p.glob('*list-aliases*.json')):
             if (k.get('TargetKeyId')):
                 # check lotation settings of the CMK
                 a = '*' + k.get('TargetKeyId') + '_get-key-rotation-status*'
+                rotation_status = 'ND'
                 for f_rotation in list(p.glob(a)):
                     if os.path.getsize(f_rotation):
                         with open(f_rotation) as j_rotation:
